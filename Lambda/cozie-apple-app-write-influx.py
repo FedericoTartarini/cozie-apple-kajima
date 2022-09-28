@@ -1,38 +1,21 @@
-# Cozie Apple Write API
-# Purpose: Insert data from Cozie-Apple app to InfluxDB
-# Author: Mario Frei, 2022
-# Status: Under development
-# Project: Cozie
-
-import os
-import json
-from influxdb import InfluxDBClient, DataFrameClient
+import influxdb_client
 import time
+from influxdb_client.client.write_api import SYNCHRONOUS
+import json
 from pprint import pprint
+import os
 
-# influx authentication
-user = os.environ["DB_USER"]
-password = os.environ["DB_PASSWORD"]
-host = os.environ["DB_HOST"]
-port = os.environ["DB_PORT"]
-db = "cozie-apple"
+token = os.environ["influxdb_token"]
+org = os.environ["influxdb_org"]
+url = "https://us-west-2-1.aws.cloud2.influxdata.com"
+bucket = "cozie-apple-test"
 
 
 def lambda_handler(event, context):
 
-    # # Forward request to node red
-    # print("Forward request to old Node-Red server:")
-    # node_red_url = "http://ec2-52-76-31-138.ap-southeast-1.compute.amazonaws.com:1880
-    # /cozie-apple"
-    # payload =  json.loads(event['body'])
-    # response = requests.post(node_red_url, json=payload)
-    # print(response.content)
-    # print("---------------------------")
+    client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
 
-    # Influx client
-    client = InfluxDBClient(host, port, user, password, db, ssl=True, verify_ssl=True)
-
-    # Read payload
+    # this is the payload that arrives from the lambda function
     payload = json.loads(event["body"])
     pprint(payload)
 
@@ -62,7 +45,8 @@ def lambda_handler(event, context):
             # print("responses")
             for key_r in payload[key].keys():
                 fields[key_r] = payload[key][key_r]
-        elif key == "heart_rate" or key == "ts_" or key == "sound_pressure":  # in key:
+            fields["vote_count"] = payload["vote_count"]
+        elif key == "heart_rate" or "ts_" in key or key == "sound_pressure":  # in key:
             for key_ts in payload[key].keys():
                 timestamp_ts = key_ts
                 print(
@@ -81,25 +65,15 @@ def lambda_handler(event, context):
                             "id_participant": payload["id_participant"],
                             "id_device": payload["id_device"],
                         },
-                        "fields": {key: payload[key][key_ts]},
+                        "fields": {
+                            key: payload[key][key_ts],
+                        },
                     }
                 )
-        else:
-            # print("other")
-            # if isinstance(payload[key], int):
-            #     payload[key] = float(payload[key])  # This conversion is needed because there is already
-            #     # float-type data in the database for some of the fields.
-            fields[key] = payload[key]
-        print("---------------------")
 
-    # Convert timestamp from string to
-    # timestamp = int(datetime.strptime(payload['timestamp_end'],
-    # "%Y-%m-%dT%H:%M:%S.%fZ").timestamp()*1000*1000)  # Can be removed
-    timestamp = payload["timestamp_end"]  # for debugging
-    print("timestamp_end: ", payload["timestamp_end"])
     json_body.append(
         {
-            "time": timestamp,
+            "time": payload["timestamp_end"],
             "measurement": payload["id_experiment"],
             "tags": {
                 "id_participant": payload["id_participant"],
@@ -111,12 +85,13 @@ def lambda_handler(event, context):
 
     print("##########################################################")
     print("json_body:")
-    # print(type(json_body))
     print(json.dumps(json_body, indent=4))
-    print("##########################################################")
-    feedback = client.write_points(json_body)  # write to InfluxDB
-    print("Client write: ", feedback)
-    print("##########################################################")
+
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+
+    for point in json_body:
+        pprint(point)
+        write_api.write(bucket=bucket, org=org, record=point)
 
     return {
         "statusCode": 200,
