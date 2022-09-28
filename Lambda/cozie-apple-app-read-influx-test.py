@@ -28,7 +28,6 @@ from_time_str = time_start.strftime("%Y-%m-%dT%H:%M:%SZ")
 client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
 query_api = client.query_api()
 
-# todo query only the columns which do not have timeseries data
 query = f"""from(bucket: "cozie-apple-test")
  |> range(start: -{weeks}w)
  |> filter(fn: (r) => r["id_participant"] == "lamda_id_participant")

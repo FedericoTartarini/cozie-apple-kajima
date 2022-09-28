@@ -26,8 +26,6 @@ bucket = "cozie-apple-test"
 
 def lambda_handler(event, context):
 
-
-    # Check if there are any parameters, if not 400 error
     if len(event["queryStringParameters"]) == 0:
         print("query string parameter not defined")
         return {
@@ -37,7 +35,6 @@ def lambda_handler(event, context):
             ),
         }
 
-    # Check if experiment_id or participant_id is provided, if not send 400 error
     if ("id_participant" not in event["queryStringParameters"]) or (
         "id_experiment" not in event["queryStringParameters"]
     ):
@@ -65,7 +62,7 @@ def lambda_handler(event, context):
     # This hack is needed because some fault data was inserted on 29.03.2022. All
     # queries including data from data they return empty. The exact reason is unkown.
     influx_time_horizon = datetime.datetime.strptime(
-        "30.09.2022, 00:00", "%d.%m.%Y, %H:%M"
+        "30.08.2022, 00:00", "%d.%m.%Y, %H:%M"
     )
     if time_start < influx_time_horizon:
         time_start = influx_time_horizon
@@ -75,9 +72,8 @@ def lambda_handler(event, context):
     client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
     query_api = client.query_api()
 
-    # fixme change query start time
-    query = f"""from(bucket: "cozie-apple-test")
-     |> range(start: -2w)
+    query = f"""from(bucket: "{bucket}")
+     |> range(start: {from_time_str})
      |> filter(fn: (r) => r["id_participant"] == "{id_participant}")
      |> filter(fn: (r) => r._measurement == "{measurement}")
      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
@@ -98,14 +94,13 @@ def lambda_handler(event, context):
         df.index = df["time"]
         df = df.drop(["time"], axis=1)
 
-        # fixme change query start time
-        query = f"""from(bucket: "cozie-apple-test")
-         |> range(start: -2w)
+        query = f"""from(bucket: "{bucket}")
+         |> range(start: {from_time_str})
          |> filter(fn: (r) => r["id_participant"] == "{id_participant}")
          |> filter(fn: (r) => r._measurement == "{measurement}")
          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
          |> keep(columns: ["_time", "heart_rate"])"""
-        df_hr = query_api.query_data_frame(query, org="t.hasama@kajima.com.sg")
+        df_hr = query_api.query_data_frame(query, org=org)
         df_hr.dropna(inplace=True)
         last_sync_timestamp = (
             df_hr.sort_values("_time")["_time"]
