@@ -30,9 +30,7 @@ def lambda_handler(event, context):
         print("query string parameter not defined")
         return {
             "statusCode": 400,
-            "body": json.dumps(
-                "Please indicate the experiment-id in the url"
-            ),
+            "body": json.dumps("Please indicate the experiment-id in the url"),
         }
 
     if ("id_participant" not in event["queryStringParameters"]) or (

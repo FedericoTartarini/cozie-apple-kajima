@@ -18,7 +18,7 @@ def lambda_handler(event, context):
     try:
         print("Forward request to old Node-Red server:")
         node_red_url = "http://ec2-52-76-31-138.ap-southeast-1.compute.amazonaws.com:1880/cozie-apple-kajima"
-        payload = json.loads(event['body'])
+        payload = json.loads(event["body"])
         response = requests.post(node_red_url, json=payload)
         print(response.content)
         print("---------------------------")
