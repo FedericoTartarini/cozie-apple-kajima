@@ -77,9 +77,9 @@ def lambda_handler(event, context):
      |> filter(fn: (r) => r["id_participant"] == "{id_participant}")
      |> filter(fn: (r) => r._measurement == "{measurement}")
      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-     |> keep(columns: ["_time","id_participant", "id_device", "vote_count"])"""
+     |> keep(columns: ["_time","id_participant", "vote_count"])"""
 
-    df = query_api.query_data_frame(query, org=org)
+    df = query_api.query_data_frame(query, org=org).dropna()
 
     last_sync_timestamp = datetime.datetime.now().timestamp()
 
