@@ -4,6 +4,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 import json
 from pprint import pprint
 import os
+import requests
 
 token = os.environ["influxdb_token"]
 org = os.environ["influxdb_org"]
@@ -12,6 +13,17 @@ bucket = "cozie-apple-test"
 
 
 def lambda_handler(event, context):
+
+    # Forward request to node red
+    try:
+        print("Forward request to old Node-Red server:")
+        node_red_url = "http://ec2-52-76-31-138.ap-southeast-1.compute.amazonaws.com:1880/cozie-apple-kajima"
+        payload = json.loads(event['body'])
+        response = requests.post(node_red_url, json=payload)
+        print(response.content)
+        print("---------------------------")
+    except:
+        print("Forward request to old Node-Red server failed.")
 
     client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
 
