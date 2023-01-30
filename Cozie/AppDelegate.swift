@@ -24,72 +24,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Remove this method to stop OneSignal Debugging
         OneSignal.setLogLevel(.LL_VERBOSE, visualLevel: .LL_NONE)
-
-        // Push notification action button handling
-        let notificationOpenedBlock: OSNotificationOpenedBlock = { result in
-            // This block gets called when the user reacts to a notification received
-            let notification: OSNotification = result.notification
-            print("Message: ", notification.body ?? "empty body")
-            print("badge number: ", notification.badge)
-            print("notification sound: ", notification.sound ?? "No sound")
-
-            if let additionalData = notification.additionalData {
-                print("additionalData: ", additionalData)
-                if let actionSelected = notification.actionButtons {
-                    print("actionSelected: ", actionSelected)
-                }
-                if let actionID = result.action.actionId {
-                    // Send notification e-mail
-                    let payload = actionID
-//                    let testurl = String("https://kc3a6ft3h5rsrtnflh3y3x2gsm0ofunj.lambda-url.ap-southeast-1.on.aws/?payload=")
-//                    let testurl2 = testurl + payload
-//                    Alamofire.request(testurl2).response { response in
-//                        print(response)
-//                    }
-
-                    // Send data to database
-                    do {
-                        let postMessage = try JSONEncoder().encode(FormatAPI(
-                                timestamp_location: GetDateTimeISOString(),
-                                timestamp_start: GetDateTimeISOString(),
-                                timestamp_end: GetDateTimeISOString(),
-                                id_participant: UserDefaults.shared.getValue(for: UserDefaults.UserDefaultKeys.participantID.rawValue) as? String ?? "",
-                                id_experiment: UserDefaults.shared.getValue(for: UserDefaults.UserDefaultKeys.experimentID.rawValue) as? String ?? "",
-                                responses: ["push_notification_action": actionID],
-                                id_device: UIDevice.current.identifierForVendor?.uuidString ?? ""))
-                        _ = PostRequest(message: postMessage)
-                    } catch let error {
-                        print("error (push notification): \(error.localizedDescription)")
-                    }
-
-                }
-            }
-        }
-
-        OneSignal.setNotificationOpenedHandler(notificationOpenedBlock)
-
-        // START OneSignal initialization code
+        
+        // OneSignal initialization
         OneSignal.initWithLaunchOptions(launchOptions)
         OneSignal.setAppId(OneSignalAppID)
 
         // The promptForPushNotifications function code will show the iOS push notification prompt.
+        // We recommend removing the following code and instead using an In-App Message to prompt for notification permission (See step 8)
         OneSignal.promptForPushNotifications(userResponse: { accepted in
-            debugPrint("User accepted notifications: \(accepted)")
-        })
-        // END OneSignal initialization code
-        IQKeyboardManager.shared.enable = true
-        LocalNotificationManager.shared.registerForPushNotifications()
-
-        // Delivery HealthKit info on application launch
-        authorizeAndDeliveryHealthKitInfo()
-
-        // Register Background Processing for delivery HealthKit info
-        backgroundProcessing.setStartTemeRangeIfNeeded()
-
-        backgroundProcessing.registerBackgroundRefresh()
-        backgroundProcessing.registerBackgroundProcessing { [weak self] in
-            self?.authorizeAndDeliveryHealthKitInfo()
-        }
+            print("User accepted notifications: \(accepted)")
+          })
 
         return true
     }

@@ -26,4 +26,4 @@ let AWSReadURL = "https://7u940359sb.execute-api.ap-southeast-1.amazonaws.com/de
 let AWSWriteAPIKey = "g8aXeu2XnM8I3tKyezikC1aOQT6eSiMFVt6WnzLf"
 let AWSReadAPIKey = "TZvrVXBuEw2ChLyWHTxdp6sdH15YiNFb73Sbc63N"
 
-let OneSignalAppID = "17d346bf-bfe5-4422-be96-2a8e4ae4cc3d"
+let OneSignalAppID = "e5d2f90b-c2a7-4709-ae0f-9888de4a005b"
